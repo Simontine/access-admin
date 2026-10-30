@@ -20,21 +20,43 @@ export default function App() {
     return (
       <div className="login">
         <form
-          className="card"
+          className="login-panel"
           onSubmit={(e) => {
             e.preventDefault()
             if (pin === store.settings.adminPin) setAuthed(true)
             else setBad(true)
           }}
         >
-          <h1>Door Access Admin</h1>
+          <div className="login-brand">
+            <span className="brand-mark" aria-hidden="true">
+              <span />
+            </span>
+            <div>
+              <span className="brand-kicker">SECURE ACCESS</span>
+              <h1>Control center</h1>
+            </div>
+          </div>
+          <p className="login-copy">Authenticate to manage facility access and security operations.</p>
           <label>
-            Admin PIN
-            <input type="password" autoFocus value={pin} onChange={(e) => setPin(e.target.value)} />
+            Administrator PIN
+            <input
+              type="password"
+              autoFocus
+              value={pin}
+              onChange={(e) => {
+                setPin(e.target.value)
+                setBad(false)
+              }}
+            />
           </label>
           {bad && <p className="error">Incorrect PIN.</p>}
-          <button className="primary">Sign in</button>
-          <p className="muted">Default PIN: 1234</p>
+          <button className="primary login-submit">
+            Authenticate <span aria-hidden="true">→</span>
+          </button>
+          <p className="login-footnote">
+            <span className="status-dot" /> Protected local session
+          </p>
+          <p className="muted login-default">Default PIN: 1234</p>
         </form>
       </div>
     )
@@ -43,15 +65,51 @@ export default function App() {
   return (
     <div className="layout">
       <nav>
-        <h2>Door Access</h2>
+        <div className="nav-brand">
+          <span className="brand-mark" aria-hidden="true">
+            <span />
+          </span>
+          <div>
+            <span className="brand-kicker">SECURITY SYSTEMS</span>
+            <h2>Sentinel<span>.</span></h2>
+          </div>
+        </div>
+        <div className="nav-section-label">OPERATIONS</div>
         {tabs.map((t) => (
-          <button key={t} className={t === tab ? 'active' : ''} onClick={() => setTab(t)}>
+          <button
+            key={t}
+            className={t === tab ? 'active' : ''}
+            aria-current={t === tab ? 'page' : undefined}
+            onClick={() => setTab(t)}
+          >
+            <span className={`nav-icon nav-icon-${tabs.indexOf(t)}`} aria-hidden="true" />
             {t}
           </button>
         ))}
-        <button onClick={() => setAuthed(false)}>Sign out</button>
+        <div className="nav-spacer" />
+        <div className="nav-session">
+          <span className="status-dot" />
+          <div>
+            <strong>Admin session</strong>
+            <small>Access granted</small>
+          </div>
+        </div>
+        <button className="sign-out" onClick={() => setAuthed(false)}>
+          <span className="nav-icon nav-icon-exit" aria-hidden="true" />
+          Sign out
+        </button>
       </nav>
       <main>
+        <header className="topbar">
+          <div>
+            <span className="topbar-kicker">SECURITY OPERATIONS</span>
+            <span className="topbar-divider">/</span>
+            <span>{tab}</span>
+          </div>
+          <span className="session-badge">
+            <span className="status-dot" /> LOCAL CONSOLE
+          </span>
+        </header>
         {tab === 'Dashboard' && <Dashboard store={store} />}
         {tab === 'Members' && <Members store={store} />}
         {tab === 'Access Monitoring' && <Logs store={store} />}
