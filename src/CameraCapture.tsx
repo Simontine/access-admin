@@ -42,7 +42,7 @@ export default function CameraCapture({ onCapture }: Props) {
     onCapture(c.toDataURL('image/jpeg', 0.8))
   }
 
-  const [espUrl, setEspUrl] = useState(() => localStorage.getItem('espCamUrl') ?? 'http://192.168.4.1')
+  const [espUrl, setEspUrl] = useState(() => localStorage.getItem('espCamUrl') ?? 'http://192.168.0.176')
   const [espOn, setEspOn] = useState(false)
   const [streamUrl, setStreamUrl] = useState('')
   const [busy, setBusy] = useState(false)
@@ -54,7 +54,7 @@ export default function CameraCapture({ onCapture }: Props) {
       const u = new URL(espBase)
       setStreamUrl(`${u.protocol}//${u.hostname}:81/stream`)
     } catch {
-      setError('Enter a valid address, e.g. http://192.168.1.50')
+      setError('Enter a valid address, e.g. http://192.168.0.176')
       return
     }
     localStorage.setItem('espCamUrl', espUrl.trim())

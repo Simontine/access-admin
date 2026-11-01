@@ -4,12 +4,15 @@ import type { Store } from '../store'
 export default function Settings({ store }: { store: Store }) {
   const [streamUrl, setStreamUrl] = useState(store.settings.streamUrl)
   const [pin, setPin] = useState(store.settings.adminPin)
+  const [fbSecret, setFbSecret] = useState(store.settings.firebaseSecret)
   const [msg, setMsg] = useState('')
 
   const save = (e: React.FormEvent) => {
     e.preventDefault()
     if (pin.length < 4) return setMsg('PIN must be at least 4 characters.')
-    store.saveSettings({ streamUrl: streamUrl.trim(), adminPin: pin })
+    store.saveSettings({ streamUrl: streamUrl.trim(), adminPin: pin,
+      firebaseSecret: fbSecret.trim(),
+    })
     setMsg('Saved.')
   }
 
@@ -53,6 +56,10 @@ export default function Settings({ store }: { store: Store }) {
           <label>
             Admin PIN
             <input value={pin} onChange={(e) => setPin(e.target.value)} />
+          </label>
+          <label className="full">
+            Firebase database secret / auth token (optional)
+            <input value={fbSecret} onChange={(e) => setFbSecret(e.target.value)} />
           </label>
           <div className="row full">
             <button className="primary">Save settings</button>

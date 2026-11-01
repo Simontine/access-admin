@@ -28,6 +28,7 @@ export interface AccessLog {
 export interface Settings {
   streamUrl: string
   adminPin: string
+  firebaseSecret: string
 }
 
 interface State {
@@ -40,13 +41,13 @@ const KEY = 'face-access-control-v1'
 const empty: State = {
   members: [],
   logs: [],
-  settings: { streamUrl: '', adminPin: '1234' },
+  settings: { streamUrl: '', adminPin: '1234', firebaseSecret: '' },
 }
 
 const load = (): State => {
   try {
     const raw = localStorage.getItem(KEY)
-    return raw ? { ...empty, ...JSON.parse(raw) } : empty
+    return raw ? { ...empty, ...JSON.parse(raw), settings: { ...empty.settings, ...JSON.parse(raw).settings } } : empty
   } catch {
     return empty
   }

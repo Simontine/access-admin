@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Direction, Store } from '../store'
+import { reportDenied, unlockDoor } from '../lock'
 import { identify, loadModels } from '../face'
 
 type Result = { ok: boolean; text: string } | null
@@ -51,7 +52,13 @@ export default function FaceRecognition({ store }: { store: Store }) {
           authorized: false,
           reason: 'Face not recognised',
         })
-        return show({ ok: false, text: 'Unknown face: access denied' })
+        const sent = await reportDenied(store.settings, 'Unknown').then(() => true, () => false)
+        return show({
+          ok: false,
+          text: sent
+            ? 'Unknown face: access denied'
+            : 'Unknown face: access denied, but the status could not be sent to Firebase.',
+        })
       }
       const m = match.member
       const ok = m.active
@@ -65,7 +72,22 @@ export default function FaceRecognition({ store }: { store: Store }) {
         authorized: ok,
         reason: ok ? `Face matched (${pct}%)` : 'Member deactivated',
       })
-      show({ ok, text: ok ? `Door unlocked for ${m.name}` : `Denied: ${m.name} is deactivated` })
+      if (ok) {
+        const sent = await unlockDoor(store.settings, m.name).then(() => true, () => false)
+        return show({
+          ok: sent,
+          text: sent
+            ? `Door unlocked for ${m.name}`
+            : `Recognised ${m.name}, but the lock command could not be sent to Firebase.`,
+        })
+      }
+      const sent = await reportDenied(store.settings, m.name).then(() => true, () => false)
+      show({
+        ok: false,
+        text: sent
+          ? `Denied: ${m.name} is deactivated`
+          : `Denied: ${m.name} is deactivated, but the status could not be sent to Firebase.`,
+      })
     } catch {
       show({
         ok: false,
@@ -86,7 +108,10 @@ export default function FaceRecognition({ store }: { store: Store }) {
       authorized: true,
       reason: 'Push button',
     })
-    show({ ok: true, text: 'Exit button pressed: door unlocked' })
+    unlockDoor(store.settings, 'Manual exit').then(
+      () => show({ ok: true, text: 'Exit button pressed: door unlocked' }),
+      () => show({ ok: false, text: 'Could not send the lock command to Firebase.' }),
+    )
   }
 
   return (

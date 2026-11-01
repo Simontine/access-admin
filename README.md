@@ -2,7 +2,7 @@
 
 Sentinel is a browser-based facility access administration console. It lets an administrator register people with face photos, run face matching against an ESP32-CAM image, review access events, and manage local data and device settings.
 
-> **Important:** This project currently provides a local web interface and simulated access-control status. It does not send a command to a physical door lock, LED, or buzzer. A “door unlocked” message or device indicator in the interface is not confirmation that hardware has operated.
+> **Hardware note:** Face scans send access status and lock commands to Firebase Realtime Database. The ESP32 firmware polls `/lock`; GPIO 2 controls the lock, GPIO 5 controls a relay in sync with the lock, and a denied status sounds the buzzer on GPIO 4 for two seconds. A “door unlocked” message or device indicator in the interface is not confirmation that hardware has operated.
 
 ## What the system does
 
@@ -36,7 +36,7 @@ Sentinel is a browser-based facility access administration console. It lets an a
 - Grants a recognized active member, denies an unknown face, and denies a recognized but deactivated member. If no face is found, it reports that result without recording an access event.
 - Records successful and denied scan attempts, including the direction, time, member (or Unknown), authorization result, and reason.
 - The manual Exit action records a granted event named “Manual exit.”
-- Shows transient result text and simulated lock/LED/buzzer indicators. These are display-only and are not connected to physical access hardware.
+- Shows transient result text and device indicators. The buzzer is operated by the ESP32 firmware; the interface's lock and LED indicators are display-only.
 
 ### Access monitoring
 
@@ -54,8 +54,8 @@ Sentinel is a browser-based facility access administration console. It lets an a
 
 ## Data storage and privacy
 
-- Application state is kept in the browser's `localStorage` under the key `face-access-control-v1`. The ESP32-CAM address used by the member photo-capture form is stored separately as `espCamUrl`.
-- Member photos and face descriptors are processed client-side; descriptors are cached in memory while the page is running. No application server or remote database is configured in this project.
+- Member, log, and settings state is kept in the browser's `localStorage` under the key `face-access-control-v1`. The ESP32-CAM address used by the member photo-capture form is stored separately as `espCamUrl`.
+- Member photos and face descriptors are processed client-side; descriptors are cached in memory while the page is running. No application server is used. Firebase Realtime Database `/lock` carries device commands and the latest access status.
 - Data is local to the browser profile and origin. Clearing browser storage removes it. Use JSON export for backups and before changing browsers or devices.
 - Treat exported JSON files as sensitive: they contain member details and face images.
 
@@ -80,12 +80,15 @@ Available commands:
 | `npm run preview` | Preview the production build locally. |
 | `npm run lint` | Run Oxlint. |
 
-## ESP32-CAM setup
+## ESP32-CAM and access-device setup
 
 1. Connect the browser's computer to a network that can reach the ESP32-CAM.
 2. In **Members**, enter the camera's base address (for example, `http://192.168.4.1`) and connect to capture enrollment photos.
 3. In **Settings**, enter the stream URL (for example, `http://192.168.4.1:81/stream`) and save.
 4. Open **Face Recognition** and run an Entry or Exit scan.
+5. Configure the ESP32 firmware's Wi-Fi, Firebase URL, and (if required) the same Firebase auth token used in **Settings**. Upload `firmware/firmware.ino`; connect the lock control input to GPIO 2, the relay input to GPIO 5, and the buzzer input to GPIO 4. GPIO 2 and GPIO 5 switch together when the lock opens and closes. The firmware sounds the buzzer for two seconds when `/lock/status` is `Denied`; it records the handled event in `/lock/buzzedAt` to prevent repeated buzzing.
+
+The lock and relay must use suitable drivers and external power; do not power them directly from ESP32 GPIOs. The buzzer should also be driven through an appropriate transistor/driver if its current exceeds the ESP32 GPIO rating. The firmware uses active-high outputs; set `ACTIVE_HIGH` to `false` for active-low modules. GPIO 5 is an ESP32 boot-strapping pin, so make sure the relay module does not force an incompatible level while the board resets.
 
 The capture implementation expects the standard ESP32 CameraWebServer-style endpoints: a live stream at `:81/stream` and a single JPEG at `/capture`. The browser must be able to load the stream and fetch the capture endpoint. Network access, browser security policy, or camera firmware configuration may prevent this; the application does not configure the camera.
 
