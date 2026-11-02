@@ -88,6 +88,8 @@ Available commands:
 4. Open **Face Recognition** and run an Entry or Exit scan.
 5. Configure the ESP32 firmware's Wi-Fi, Firebase URL, and (if required) the same Firebase auth token used in **Settings**. Upload `firmware/firmware.ino`; connect the lock control input to GPIO 2, the relay input to GPIO 5, and the buzzer input to GPIO 4. GPIO 2 and GPIO 5 switch together when the lock opens and closes. The firmware sounds the buzzer for two seconds when `/lock/status` is `Denied`; it records the handled event in `/lock/buzzedAt` to prevent repeated buzzing.
 
+If a browser request returns HTTP 401 or 403, Firebase rejected the write to `/lock`. Check the token in **Settings** and the Realtime Database rules for both the browser and ESP32 clients. Do not enable unauthenticated public writes as a permanent fix.
+
 The lock and relay must use suitable drivers and external power; do not power them directly from ESP32 GPIOs. The buzzer should also be driven through an appropriate transistor/driver if its current exceeds the ESP32 GPIO rating. The firmware uses active-high outputs; set `ACTIVE_HIGH` to `false` for active-low modules. GPIO 5 is an ESP32 boot-strapping pin, so make sure the relay module does not force an incompatible level while the board resets.
 
 The capture implementation expects the standard ESP32 CameraWebServer-style endpoints: a live stream at `:81/stream` and a single JPEG at `/capture`. The browser must be able to load the stream and fetch the capture endpoint. Network access, browser security policy, or camera firmware configuration may prevent this; the application does not configure the camera.

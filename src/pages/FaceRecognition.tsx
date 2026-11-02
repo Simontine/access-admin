@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Direction, Store } from '../store'
-import { reportDenied, unlockDoor } from '../lock'
+import { firebaseErrorMessage, reportDenied, unlockDoor } from '../lock'
 import { identify, loadModels } from '../face'
 
 type Result = { ok: boolean; text: string } | null
@@ -52,12 +52,13 @@ export default function FaceRecognition({ store }: { store: Store }) {
           authorized: false,
           reason: 'Face not recognised',
         })
-        const sent = await reportDenied(store.settings, 'Unknown').then(() => true, () => false)
+        const firebaseError = await reportDenied(store.settings, 'Unknown')
+          .then(() => null, firebaseErrorMessage)
         return show({
           ok: false,
-          text: sent
-            ? 'Unknown face: access denied'
-            : 'Unknown face: access denied, but the status could not be sent to Firebase.',
+          text: firebaseError
+            ? `Unknown face: access denied, but ${firebaseError}`
+            : 'Unknown face: access denied',
         })
       }
       const m = match.member
@@ -73,20 +74,22 @@ export default function FaceRecognition({ store }: { store: Store }) {
         reason: ok ? `Face matched (${pct}%)` : 'Member deactivated',
       })
       if (ok) {
-        const sent = await unlockDoor(store.settings, m.name).then(() => true, () => false)
+        const firebaseError = await unlockDoor(store.settings, m.name)
+          .then(() => null, firebaseErrorMessage)
         return show({
-          ok: sent,
-          text: sent
-            ? `Door unlocked for ${m.name}`
-            : `Recognised ${m.name}, but the lock command could not be sent to Firebase.`,
+          ok: !firebaseError,
+          text: firebaseError
+            ? `Recognised ${m.name}, but ${firebaseError}`
+            : `Door unlocked for ${m.name}`,
         })
       }
-      const sent = await reportDenied(store.settings, m.name).then(() => true, () => false)
+      const firebaseError = await reportDenied(store.settings, m.name)
+        .then(() => null, firebaseErrorMessage)
       show({
         ok: false,
-        text: sent
-          ? `Denied: ${m.name} is deactivated`
-          : `Denied: ${m.name} is deactivated, but the status could not be sent to Firebase.`,
+        text: firebaseError
+          ? `Denied: ${m.name} is deactivated, but ${firebaseError}`
+          : `Denied: ${m.name} is deactivated`,
       })
     } catch {
       show({
@@ -110,7 +113,7 @@ export default function FaceRecognition({ store }: { store: Store }) {
     })
     unlockDoor(store.settings, 'Manual exit').then(
       () => show({ ok: true, text: 'Exit button pressed: door unlocked' }),
-      () => show({ ok: false, text: 'Could not send the lock command to Firebase.' }),
+      (error: unknown) => show({ ok: false, text: firebaseErrorMessage(error) }),
     )
   }
 

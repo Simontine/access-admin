@@ -5,8 +5,8 @@
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 
-const char* WIFI_SSID = "NTINI";
-const char* WIFI_PASS = "Mm@phut1";
+const char* WIFI_SSID = "Mahle";
+const char* WIFI_PASS = "23atiLeM";
 // e.g. https://your-project-default-rtdb.firebaseio.com  (no trailing slash)
 const char* FIREBASE_URL = "https://face-recognition-68205-default-rtdb.firebaseio.com";
 const char* FIREBASE_AUTH = "";  // database secret/token, or empty if rules are open
@@ -29,15 +29,20 @@ String lockUrl() {
 
 void setLock(bool open) {
   digitalWrite(LOCK_PIN, (open == ACTIVE_HIGH) ? HIGH : LOW);
-  digitalWrite(RELAY_PIN, (open == ACTIVE_HIGH) ? HIGH : LOW);
+  digitalWrite(RELAY_PIN, (open == ACTIVE_HIGH) ? LOW : HIGH);
   digitalWrite(RED_Light, (open == ACTIVE_HIGH) ? LOW : HIGH);
 }
 
 void connectWifi() {
   if (WiFi.status() == WL_CONNECTED) return;
+  Serial.print("Connecting");
   WiFi.begin(WIFI_SSID, WIFI_PASS);
   unsigned long start = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - start < 15000) delay(250);
+  while (WiFi.status() != WL_CONNECTED && millis() - start < 15000) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println(WiFi.status() == WL_CONNECTED ? " connected" : " failed");
 }
 
 String jsonNumber(const String& body, const char* key) {
